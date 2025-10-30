@@ -1,258 +1,139 @@
-// src/admin/LaporanAdmin.jsx
-import { useMemo, useState } from 'react';
-import { FaMapMarkerAlt, FaEdit } from 'react-icons/fa';
-import Modal from '../shared/Modal';
+// src/admin/AdminApp.jsx
+import { useState } from 'react';
+import { Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom';
 
-/* dummy laporan */
-const initial = Array.from({ length: 10 }).map((_, i) => ({
-  id: i + 1,
-  date: '01/Okt/2025',
-  rt: (i % 6 + 1).toString().padStart(2, '0'),
-  rw: (i % 4 + 1).toString().padStart(2, '0'),
-  alamat: 'Jl. MH. Thamrin No. 50, Sibolga',
-  kategori: i % 3 === 0 ? 'Berpotensi' : 'Tidak Berpotensi',
-  pelapor: 'Sindy',
-  image: '', // taruh url kalau mau demo gambar
-}));
+import HomeAdmin from './HomeAdmin';
+import LaporanAdmin from './LaporanAdmin';
+import AccountsAdmin from './AccountsAdmin';
 
-export default function LaporanAdmin() {
-  const [rows, setRows] = useState(initial);
-  const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState('all');
-  const [openEdit, setOpenEdit] = useState(false);
-  const [editing, setEditing] = useState(null);
+export default function AdminApp() {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
 
-  const filtered = useMemo(() => {
-    return rows.filter((r) => {
-      if (filter !== 'all' && r.kategori !== filter) return false;
-      if (!query) return true;
-      const q = query.toLowerCase();
-      return (
-        r.alamat.toLowerCase().includes(q) ||
-        r.pelapor.toLowerCase().includes(q) ||
-        r.date.toLowerCase().includes(q)
-      );
-    });
-  }, [rows, query, filter]);
-
-  function openForEdit(row) {
-    setEditing({ ...row });
-    setOpenEdit(true);
-  }
-
-  function saveEdit() {
-    setRows((rs) => rs.map((r) => (r.id === editing.id ? editing : r)));
-    setOpenEdit(false);
-  }
-
-  function exportCSV() {
-    const header = [
-      'No',
-      'Tanggal',
-      'RT',
-      'RW',
-      'Detail Alamat',
-      'Kategori',
-      'Pelapor',
-      'Gambar',
-    ];
-    const csv = [header.join(',')]
-      .concat(
-        rows.map((r) =>
-          [
-            r.id,
-            r.date,
-            r.rt,
-            r.rw,
-            `"${r.alamat}"`,
-            r.kategori,
-            r.pelapor,
-            r.image || '',
-          ].join(','),
-        ),
-      )
-      .join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'laporan.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+  const logout = () => {
+    // TODO: hapus token/session beneran di sini
+    navigate('/login', { replace: true });
+  };
 
   return (
-    <section className="max-w-7xl mx-auto">
-      {/* Header sticky + controls (wrap di mobile) */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur">
-        <div className="px-4 sm:px-6 py-4 space-y-3">
-          <h2 className="text-xl sm:text-2xl font-semibold">Laporan</h2>
+    <div className="min-h-dvh bg-white text-slate-900">
+      {/* ===== Topbar (mobile) ===== */}
+      <header className="fixed inset-x-0 top-0 z-40 flex items-center gap-3 bg-white/70 backdrop-blur px-4 py-3 shadow-sm lg:hidden">
+        <button
+          onClick={() => setOpen(true)}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-slate-100"
+          aria-label="Open menu"
+        >
+          {/* icon burger */}
+          <svg width="20" height="20" viewBox="0 0 20 20" className="fill-current">
+            <path d="M2 5h16v2H2zM2 9h16v2H2zM2 13h16v2H2z" />
+          </svg>
+        </button>
+        <div className="font-semibold">Jumantik • Admin</div>
+      </header>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cari alamat/tanggal/pelapor…"
-              className="flex-1 min-w-[160px] rounded-xl bg-white px-3 py-2 shadow-sm border border-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400"
-            />
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="w-[140px] rounded-xl bg-white px-3 py-2 shadow-sm border border-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400"
-            >
-              <option value="all">Semua</option>
-              <option>Berpotensi</option>
-              <option>Tidak Berpotensi</option>
-            </select>
-            <button
-              onClick={exportCSV}
-              className="w-full sm:w-auto rounded-xl px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-sm"
-            >
-              Export
-            </button>
-          </div>
+      {/* ===== Overlay (mobile) ===== */}
+      <div
+        onClick={() => setOpen(false)}
+        className={`fixed inset-0 z-30 bg-black/40 transition-opacity lg:hidden ${
+          open ? 'opacity-100 visible' : 'opacity-0 invisible'
+        }`}
+      />
+
+      {/* ===== Sidebar (drawer di mobile) ===== */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-72 transform bg-slate-900 text-slate-100 px-4 py-6 transition-transform lg:hidden ${
+          open ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <div className="font-semibold">Menu</div>
+          <button
+            onClick={() => setOpen(false)}
+            aria-label="Close menu"
+            className="h-8 w-8 grid place-items-center rounded-md hover:bg-white/10"
+          >
+            ×
+          </button>
         </div>
-      </div>
 
-      {/* Table card */}
-      <div className="px-4 sm:px-6 pb-8 pt-2">
-        <div className="rounded-2xl bg-white shadow-sm p-2 sm:p-4">
-          {/* Table container must scroll on small screens */}
-          <div className="overflow-x-auto">
-            <table className="min-w-[720px] w-full text-sm">
-              <thead className="bg-slate-50 text-slate-600">
-                <tr className="text-left">
-                  <Th>No</Th>
-                  <Th>Tanggal</Th>
-                  <Th>RT</Th>
-                  <Th>RW</Th>
-                  <Th>Detail Alamat</Th>
-                  <Th>Kategori</Th>
-                  <Th>Pelapor</Th>
-                  <Th className="text-center">Aksi</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {filtered.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-50">
-                    <Td className="whitespace-nowrap">{r.id}</Td>
-                    <Td className="whitespace-nowrap">{r.date}</Td>
-                    <Td className="whitespace-nowrap">{r.rt}</Td>
-                    <Td className="whitespace-nowrap">{r.rw}</Td>
-                    <Td className="min-w-[220px]">{r.alamat}</Td>
-                    <Td>
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          r.kategori === 'Berpotensi'
-                            ? 'bg-rose-500/10 text-rose-700'
-                            : 'bg-emerald-500/10 text-emerald-700'
-                        }`}
-                      >
-                        {r.kategori}
-                      </span>
-                    </Td>
-                    <Td className="whitespace-nowrap">{r.pelapor}</Td>
-                    <Td className="text-center">
-                      <div className="inline-flex flex-wrap items-center gap-2">
-                        <button
-                          title="Lihat lokasi"
-                          className="rounded-lg px-2 py-1 text-rose-600 hover:bg-rose-50"
-                        >
-                          <FaMapMarkerAlt />
-                        </button>
-                        <button
-                          onClick={() => openForEdit(r)}
-                          title="Edit"
-                          className="rounded-lg px-2 py-1 text-sky-600 hover:bg-sky-50"
-                        >
-                          <FaEdit />
-                        </button>
-                      </div>
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <nav className="space-y-2">
+          <Item to="/admin" onClick={() => setOpen(false)} end>Home</Item>
+          <Item to="/admin/laporan" onClick={() => setOpen(false)}>Laporan</Item>
+          <Item to="/admin/akun" onClick={() => setOpen(false)}>Data Akun</Item>
+        </nav>
+
+        <button
+          onClick={() => { setOpen(false); logout(); }}
+          className="mt-auto w-full rounded-lg bg-white/10 hover:bg-white/15 px-3 py-2 text-sm"
+        >
+          Logout
+        </button>
+      </aside>
+
+      {/* ====== MOBILE CONTENT (own layout) ====== */}
+      <main className="lg:hidden pt-14">
+        <div className="min-h-dvh px-4 sm:px-6 py-4">
+          <ContentRoutes />
         </div>
-      </div>
+      </main>
 
-      {/* Modal Edit */}
-      <Modal open={openEdit} onClose={() => setOpenEdit(false)} title="Edit Laporan">
-        {editing && (
-          <div className="space-y-3">
-            <label className="block text-sm">Tanggal</label>
-            <input
-              value={editing.date}
-              onChange={(e) => setEditing({ ...editing, date: e.target.value })}
-              className="w-full rounded-xl bg-white px-3 py-2 shadow-sm border border-slate-200"
-            />
+      {/* ====== DESKTOP CONTENT (sidebar + content) ====== */}
+      <div className="hidden lg:flex">
+        {/* Static sidebar (desktop) */}
+        <aside className="sticky top-0 h-screen w-60 flex-shrink-0 bg-slate-900 text-slate-100 px-4 py-6">
+          <div className="font-semibold text-lg mb-6">Jumantik • Admin</div>
+          <nav className="space-y-2">
+            <Item to="/admin" end>Home</Item>
+            <Item to="/admin/laporan">Laporan</Item>
+            <Item to="/admin/akun">Data Akun</Item>
+          </nav>
+          <button
+            onClick={logout}
+            className="mt-6 w-full rounded-lg bg-white/10 hover:bg-white/15 px-3 py-2 text-sm"
+          >
+            Logout
+          </button>
+        </aside>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm">RT</label>
-                <input
-                  value={editing.rt}
-                  onChange={(e) => setEditing({ ...editing, rt: e.target.value })}
-                  className="w-full rounded-xl bg-white px-3 py-2 shadow-sm border border-slate-200"
-                />
-              </div>
-              <div>
-                <label className="block text-sm">RW</label>
-                <input
-                  value={editing.rw}
-                  onChange={(e) => setEditing({ ...editing, rw: e.target.value })}
-                  className="w-full rounded-xl bg-white px-3 py-2 shadow-sm border border-slate-200"
-                />
-              </div>
-            </div>
-
-            <label className="block text-sm">Detail Alamat</label>
-            <textarea
-              rows={3}
-              value={editing.alamat}
-              onChange={(e) => setEditing({ ...editing, alamat: e.target.value })}
-              className="w-full rounded-xl bg-white px-3 py-2 shadow-sm border border-slate-200"
-            />
-
-            <label className="block text-sm">Kategori</label>
-            <select
-              value={editing.kategori}
-              onChange={(e) => setEditing({ ...editing, kategori: e.target.value })}
-              className="w-full rounded-xl bg-white px-3 py-2 shadow-sm border border-slate-200"
-            >
-              <option>Berpotensi</option>
-              <option>Tidak Berpotensi</option>
-            </select>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setOpenEdit(false)} className="px-4 py-2">
-                Cancel
-              </button>
-              <button
-                onClick={saveEdit}
-                className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white"
-              >
-                Save
-              </button>
-            </div>
+        {/* Main content (desktop) */}
+        <main className="flex-1 min-h-screen bg-white">
+          <div className="px-6 lg:px-8 py-6">
+            <ContentRoutes />
           </div>
-        )}
-      </Modal>
-    </section>
+        </main>
+      </div>
+    </div>
   );
 }
 
-/* Helpers */
-function Th({ children, className = '' }) {
+/** Routes dipakai ulang di mobile & desktop supaya tidak duplikasi logic */
+function ContentRoutes() {
   return (
-    <th className={`px-3 sm:px-4 py-2 sm:py-3 text-sm font-semibold ${className}`}>
+    <Routes>
+      <Route index element={<HomeAdmin />} />
+      <Route path="laporan" element={<LaporanAdmin />} />
+      <Route path="akun" element={<AccountsAdmin />} />
+      <Route path="*" element={<Navigate to="." replace />} />
+    </Routes>
+  );
+}
+
+/** Link item sidebar */
+function Item({ to, children, end = false, onClick }) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      onClick={onClick}
+      className={({ isActive }) =>
+        [
+          'block rounded-md px-3 py-2 transition',
+          isActive ? 'bg-white text-slate-800 shadow' : 'hover:bg-white/10',
+        ].join(' ')
+      }
+    >
       {children}
-    </th>
+    </NavLink>
   );
-}
-
-function Td({ children, className = '' }) {
-  return <td className={`px-3 sm:px-4 py-3 align-top ${className}`}>{children}</td>;
 }
