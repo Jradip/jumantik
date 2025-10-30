@@ -12,7 +12,7 @@ const initial = Array.from({ length: 10 }).map((_, i) => ({
   alamat: 'Jl. MH. Thamrin No. 50, Sibolga',
   kategori: i % 3 === 0 ? 'Berpotensi' : 'Tidak Berpotensi',
   pelapor: 'Sindy',
-  image: i % 3 === 0 ? '' : '', // taruh url kalau mau demo gambar
+  image: '', // taruh url kalau mau demo gambar
 }));
 
 export default function LaporanAdmin() {
@@ -83,31 +83,31 @@ export default function LaporanAdmin() {
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Header sticky + controls */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
-          <h2 className="text-2xl font-bold">Laporan</h2>
+    <section className="max-w-7xl mx-auto">
+      {/* Header sticky + controls (wrap di mobile) */}
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur">
+        <div className="px-4 sm:px-6 py-4 space-y-3">
+          <h2 className="text-xl sm:text-2xl font-semibold">Laporan</h2>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2">
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search…"
-              className="w-full sm:w-64 rounded-xl border px-4 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+              placeholder="Cari alamat/tanggal/pelapor…"
+              className="flex-1 min-w-[160px] rounded-xl bg-white px-3 py-2 shadow-sm border border-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400"
             />
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="rounded-xl border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+              className="w-[140px] rounded-xl bg-white px-3 py-2 shadow-sm border border-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400"
             >
-              <option value="all">All</option>
+              <option value="all">Semua</option>
               <option>Berpotensi</option>
               <option>Tidak Berpotensi</option>
             </select>
             <button
               onClick={exportCSV}
-              className="rounded-xl bg-sky-600 hover:bg-sky-700 text-white px-4 py-2"
+              className="w-full sm:w-auto rounded-xl px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-sm"
             >
               Export
             </button>
@@ -116,111 +116,94 @@ export default function LaporanAdmin() {
       </div>
 
       {/* Table card */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="rounded-2xl overflow-hidden shadow border border-slate-200">
-          <table className="w-full border-collapse">
-            <thead className="bg-slate-50 text-slate-600">
-              <tr>
-                <Th>No</Th>
-                <Th>Tanggal</Th>
-                <Th>RT</Th>
-                <Th>RW</Th>
-                <Th>Detail Alamat</Th>
-                <Th>Kategori</Th>
-                <Th>Pelapor</Th>
-                <Th>Gambar</Th>
-                <Th className="text-center">Action</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50">
-                  <Td>{r.id}</Td>
-                  <Td>{r.date}</Td>
-                  <Td>{r.rt}</Td>
-                  <Td>{r.rw}</Td>
-                  <Td>{r.alamat}</Td>
-                  <Td>
-                    <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
-                        r.kategori === 'Berpotensi'
-                          ? 'bg-rose-500 text-white'
-                          : 'bg-emerald-500 text-white'
-                      }`}
-                    >
-                      {r.kategori}
-                    </span>
-                  </Td>
-                  <Td>{r.pelapor}</Td>
-                  <Td>
-                    {r.image ? (
-                      <img
-                        src={r.image}
-                        alt="bukti"
-                        className="h-10 w-10 object-cover rounded-md border"
-                      />
-                    ) : (
-                      <span className="text-slate-400">—</span>
-                    )}
-                  </Td>
-                  <Td className="text-center">
-                    <div className="inline-flex items-center gap-2">
-                      <button
-                        title="Lihat lokasi"
-                        className="p-2 text-rose-500 hover:bg-rose-50 rounded"
-                      >
-                        <FaMapMarkerAlt />
-                      </button>
-                      <button
-                        onClick={() => openForEdit(r)}
-                        title="Edit"
-                        className="p-2 text-sky-600 hover:bg-sky-50 rounded"
-                      >
-                        <FaEdit />
-                      </button>
-                    </div>
-                  </Td>
+      <div className="px-4 sm:px-6 pb-8 pt-2">
+        <div className="rounded-2xl bg-white shadow-sm p-2 sm:p-4">
+          {/* Table container must scroll on small screens */}
+          <div className="overflow-x-auto">
+            <table className="min-w-[720px] w-full text-sm">
+              <thead className="bg-slate-50 text-slate-600">
+                <tr className="text-left">
+                  <Th>No</Th>
+                  <Th>Tanggal</Th>
+                  <Th>RT</Th>
+                  <Th>RW</Th>
+                  <Th>Detail Alamat</Th>
+                  <Th>Kategori</Th>
+                  <Th>Pelapor</Th>
+                  <Th className="text-center">Aksi</Th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {filtered.map((r) => (
+                  <tr key={r.id} className="hover:bg-slate-50">
+                    <Td className="whitespace-nowrap">{r.id}</Td>
+                    <Td className="whitespace-nowrap">{r.date}</Td>
+                    <Td className="whitespace-nowrap">{r.rt}</Td>
+                    <Td className="whitespace-nowrap">{r.rw}</Td>
+                    <Td className="min-w-[220px]">{r.alamat}</Td>
+                    <Td>
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          r.kategori === 'Berpotensi'
+                            ? 'bg-rose-500/10 text-rose-700'
+                            : 'bg-emerald-500/10 text-emerald-700'
+                        }`}
+                      >
+                        {r.kategori}
+                      </span>
+                    </Td>
+                    <Td className="whitespace-nowrap">{r.pelapor}</Td>
+                    <Td className="text-center">
+                      <div className="inline-flex flex-wrap items-center gap-2">
+                        <button
+                          title="Lihat lokasi"
+                          className="rounded-lg px-2 py-1 text-rose-600 hover:bg-rose-50"
+                        >
+                          <FaMapMarkerAlt />
+                        </button>
+                        <button
+                          onClick={() => openForEdit(r)}
+                          title="Edit"
+                          className="rounded-lg px-2 py-1 text-sky-600 hover:bg-sky-50"
+                        >
+                          <FaEdit />
+                        </button>
+                      </div>
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       {/* Modal Edit */}
-      <Modal
-        open={openEdit}
-        onClose={() => setOpenEdit(false)}
-        title="Edit Laporan"
-      >
+      <Modal open={openEdit} onClose={() => setOpenEdit(false)} title="Edit Laporan">
         {editing && (
           <div className="space-y-3">
             <label className="block text-sm">Tanggal</label>
             <input
               value={editing.date}
               onChange={(e) => setEditing({ ...editing, date: e.target.value })}
-              className="w-full rounded-xl border px-3 py-2"
+              className="w-full rounded-xl bg-white px-3 py-2 shadow-sm border border-slate-200"
             />
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm">RT</label>
                 <input
                   value={editing.rt}
-                  onChange={(e) =>
-                    setEditing({ ...editing, rt: e.target.value })
-                  }
-                  className="w-full rounded-xl border px-3 py-2"
+                  onChange={(e) => setEditing({ ...editing, rt: e.target.value })}
+                  className="w-full rounded-xl bg-white px-3 py-2 shadow-sm border border-slate-200"
                 />
               </div>
               <div>
                 <label className="block text-sm">RW</label>
                 <input
                   value={editing.rw}
-                  onChange={(e) =>
-                    setEditing({ ...editing, rw: e.target.value })
-                  }
-                  className="w-full rounded-xl border px-3 py-2"
+                  onChange={(e) => setEditing({ ...editing, rw: e.target.value })}
+                  className="w-full rounded-xl bg-white px-3 py-2 shadow-sm border border-slate-200"
                 />
               </div>
             </div>
@@ -229,29 +212,22 @@ export default function LaporanAdmin() {
             <textarea
               rows={3}
               value={editing.alamat}
-              onChange={(e) =>
-                setEditing({ ...editing, alamat: e.target.value })
-              }
-              className="w-full rounded-xl border px-3 py-2"
+              onChange={(e) => setEditing({ ...editing, alamat: e.target.value })}
+              className="w-full rounded-xl bg-white px-3 py-2 shadow-sm border border-slate-200"
             />
 
             <label className="block text-sm">Kategori</label>
             <select
               value={editing.kategori}
-              onChange={(e) =>
-                setEditing({ ...editing, kategori: e.target.value })
-              }
-              className="w-full rounded-xl border px-3 py-2"
+              onChange={(e) => setEditing({ ...editing, kategori: e.target.value })}
+              className="w-full rounded-xl bg-white px-3 py-2 shadow-sm border border-slate-200"
             >
               <option>Berpotensi</option>
               <option>Tidak Berpotensi</option>
             </select>
 
             <div className="flex justify-end gap-2 pt-2">
-              <button
-                onClick={() => setOpenEdit(false)}
-                className="px-4 py-2"
-              >
+              <button onClick={() => setOpenEdit(false)} className="px-4 py-2">
                 Cancel
               </button>
               <button
@@ -264,19 +240,19 @@ export default function LaporanAdmin() {
           </div>
         )}
       </Modal>
-    </div>
+    </section>
   );
 }
 
-/* Small helpers for cleaner table markup */
+/* Helpers */
 function Th({ children, className = '' }) {
   return (
-    <th className={`px-4 py-3 text-left text-sm font-semibold ${className}`}>
+    <th className={`px-3 sm:px-4 py-2 sm:py-3 text-sm font-semibold ${className}`}>
       {children}
     </th>
   );
 }
 
 function Td({ children, className = '' }) {
-  return <td className={`px-4 py-3 border-t ${className}`}>{children}</td>;
+  return <td className={`px-3 sm:px-4 py-3 align-top ${className}`}>{children}</td>;
 }
