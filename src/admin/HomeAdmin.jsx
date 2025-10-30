@@ -1,139 +1,214 @@
-// src/admin/AdminApp.jsx
-import { useState } from 'react';
-import { Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom';
+// src/admin/HomeAdmin.jsx
+import { useState, useRef } from 'react';
+import Modal from '../shared/Modal';
+import { FaPlus, FaEdit } from 'react-icons/fa';
 
-import HomeAdmin from './HomeAdmin';
-import LaporanAdmin from './LaporanAdmin';
-import AccountsAdmin from './AccountsAdmin';
+const dummy = [
+  { id: 1, title: 'Cegah DBD', desc: 'Tips pencegahan DBD...', image: '' },
+  { id: 2, title: 'Vaksinasi Lokal', desc: 'Info vaksinasi...', image: '' },
+  { id: 3, title: 'Tips 3M Plus', desc: 'Mengu ras, menutup, mengubur...', image: '' },
+];
 
-export default function AdminApp() {
-  const navigate = useNavigate();
+export default function HomeAdmin() {
+  const [items, setItems] = useState(dummy);
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
 
-  const logout = () => {
-    // TODO: hapus token/session beneran di sini
-    navigate('/login', { replace: true });
+  // ====== file picker / drag-n-drop state ======
+  const fileRef = useRef(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  function addContent() {
+    setEditing({ id: Date.now(), title: '', desc: '', image: '', __blobUrl: '' });
+    setOpen(true);
+  }
+  function editContent(it) {
+    setEditing({ ...it, __blobUrl: '' });
+    setOpen(true);
+  }
+  function save() {
+    setItems((arr) => {
+      const idx = arr.findIndex((a) => a.id === editing.id);
+      const payload = { id: editing.id, title: editing.title, desc: editing.desc, image: editing.image || '' };
+      if (idx > -1) {
+        const next = [...arr];
+        next[idx] = payload;
+        return next;
+      }
+      return [payload, ...arr];
+    });
+    // bersihkan blob URL sementara jika ada
+    if (editing?.__blobUrl) URL.revokeObjectURL(editing.__blobUrl);
+    setOpen(false);
+  }
+
+  // ====== helpers untuk upload/preview gambar ======
+  const openFile = () => fileRef.current?.click();
+
+  const handleFiles = (files) => {
+    const f = files?.[0];
+    if (!f) return;
+    // revoke url lama bila ada
+    if (editing?.__blobUrl) URL.revokeObjectURL(editing.__blobUrl);
+    const url = URL.createObjectURL(f);
+    setEditing((e) => ({ ...e, image: url, __blobUrl: url }));
+  };
+
+  const onInputFile = (e) => handleFiles(e.target.files);
+
+  const onDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    handleFiles(e.dataTransfer.files);
+  };
+
+  const onDragOver = (e) => {
+    e.preventDefault();
+    if (!dragOver) setDragOver(true);
+  };
+  const onDragLeave = () => setDragOver(false);
+
+  const clearImage = () => {
+    if (editing?.__blobUrl) URL.revokeObjectURL(editing.__blobUrl);
+    setEditing((e) => ({ ...e, image: '', __blobUrl: '' }));
+    if (fileRef.current) fileRef.current.value = '';
   };
 
   return (
-    <div className="min-h-dvh bg-white text-slate-900">
-      {/* ===== Topbar (mobile) ===== */}
-      <header className="fixed inset-x-0 top-0 z-40 flex items-center gap-3 bg-white/70 backdrop-blur px-4 py-3 shadow-sm lg:hidden">
-        <button
-          onClick={() => setOpen(true)}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-slate-100"
-          aria-label="Open menu"
-        >
-          {/* icon burger */}
-          <svg width="20" height="20" viewBox="0 0 20 20" className="fill-current">
-            <path d="M2 5h16v2H2zM2 9h16v2H2zM2 13h16v2H2z" />
-          </svg>
-        </button>
-        <div className="font-semibold">Jumantik • Admin</div>
-      </header>
-
-      {/* ===== Overlay (mobile) ===== */}
-      <div
-        onClick={() => setOpen(false)}
-        className={`fixed inset-0 z-30 bg-black/40 transition-opacity lg:hidden ${
-          open ? 'opacity-100 visible' : 'opacity-0 invisible'
-        }`}
-      />
-
-      {/* ===== Sidebar (drawer di mobile) ===== */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-40 w-72 transform bg-slate-900 text-slate-100 px-4 py-6 transition-transform lg:hidden ${
-          open ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <div className="font-semibold">Menu</div>
+    <div className="min-h-screen">
+      {/* Header sticky + tombol Add */}
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Home</h2>
           <button
-            onClick={() => setOpen(false)}
-            aria-label="Close menu"
-            className="h-8 w-8 grid place-items-center rounded-md hover:bg-white/10"
+            onClick={addContent}
+            className="inline-flex items-center gap-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white px-4 py-2"
           >
-            ×
+            <FaPlus /> Add content
           </button>
         </div>
-
-        <nav className="space-y-2">
-          <Item to="/admin" onClick={() => setOpen(false)} end>Home</Item>
-          <Item to="/admin/laporan" onClick={() => setOpen(false)}>Laporan</Item>
-          <Item to="/admin/akun" onClick={() => setOpen(false)}>Data Akun</Item>
-        </nav>
-
-        <button
-          onClick={() => { setOpen(false); logout(); }}
-          className="mt-auto w-full rounded-lg bg-white/10 hover:bg-white/15 px-3 py-2 text-sm"
-        >
-          Logout
-        </button>
-      </aside>
-
-      {/* ====== MOBILE CONTENT (own layout) ====== */}
-      <main className="lg:hidden pt-14">
-        <div className="min-h-dvh px-4 sm:px-6 py-4">
-          <ContentRoutes />
-        </div>
-      </main>
-
-      {/* ====== DESKTOP CONTENT (sidebar + content) ====== */}
-      <div className="hidden lg:flex">
-        {/* Static sidebar (desktop) */}
-        <aside className="sticky top-0 h-screen w-60 flex-shrink-0 bg-slate-900 text-slate-100 px-4 py-6">
-          <div className="font-semibold text-lg mb-6">Jumantik • Admin</div>
-          <nav className="space-y-2">
-            <Item to="/admin" end>Home</Item>
-            <Item to="/admin/laporan">Laporan</Item>
-            <Item to="/admin/akun">Data Akun</Item>
-          </nav>
-          <button
-            onClick={logout}
-            className="mt-6 w-full rounded-lg bg-white/10 hover:bg-white/15 px-3 py-2 text-sm"
-          >
-            Logout
-          </button>
-        </aside>
-
-        {/* Main content (desktop) */}
-        <main className="flex-1 min-h-screen bg-white">
-          <div className="px-6 lg:px-8 py-6">
-            <ContentRoutes />
-          </div>
-        </main>
       </div>
+
+      {/* Grid konten */}
+      <div className="max-w-7xl mx-auto px-6 py-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {items.map((it) => (
+          <article key={it.id} className="rounded-2xl shadow border border-slate-100">
+            <div className="p-4 flex items-start justify-between">
+              <div>
+                <h3 className="font-semibold">{it.title}</h3>
+                <p className="text-sm text-slate-500">{it.desc}</p>
+              </div>
+              <button
+                onClick={() => editContent(it)}
+                className="p-2 rounded-lg text-sky-600 hover:bg-slate-50"
+                title="Edit"
+              >
+                <FaEdit />
+              </button>
+            </div>
+
+            <div className="px-4 pb-4">
+              {it.image ? (
+                <div className="rounded-xl overflow-hidden">
+                  {/* Preview rapi memenuhi container */}
+                  <div className="w-full aspect-[16/9]">
+                    <img src={it.image} alt="" className="w-full h-full object-cover" />
+                  </div>
+                </div>
+              ) : (
+                <div className="h-44 grid place-items-center rounded-xl bg-slate-100 text-slate-400">
+                  Tidak ada gambar
+                </div>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+
+      {/* Modal Add/Edit */}
+      <Modal open={open} onClose={() => setOpen(false)} title="Add / Edit Konten">
+        {editing && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm mb-1">Judul</label>
+              <input
+                value={editing.title}
+                onChange={(e) => setEditing({ ...editing, title: e.target.value })}
+                className="w-full rounded-xl border px-3 py-2"
+                placeholder="Masukan judul konten …"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm mb-1">Deskripsi Konten</label>
+              <textarea
+                rows={4}
+                value={editing.desc}
+                onChange={(e) => setEditing({ ...editing, desc: e.target.value })}
+                className="w-full rounded-xl border px-3 py-2"
+                placeholder="Masukan deskripsi …"
+              />
+            </div>
+
+            {/* ====== Dropzone / Click-to-Upload ====== */}
+            <div>
+              <label className="block text-sm mb-1">Gambar</label>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={openFile}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && openFile()}
+                onDragOver={onDragOver}
+                onDragLeave={onDragLeave}
+                onDrop={onDrop}
+                className={`rounded-xl border-2 border-dashed ${
+                  dragOver ? 'border-sky-500 bg-sky-50' : 'border-slate-300'
+                }`}
+              >
+                {/* preview akan nge-fit container (16:9) */}
+                <div className="w-full aspect-[16/9] overflow-hidden rounded-[10px]">
+                  {editing.image ? (
+                    <img src={editing.image} alt="preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full grid place-items-center text-slate-400">
+                      Seret & letakkan gambar di sini, atau klik untuk memilih
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={onInputFile}
+                />
+                {editing.image && (
+                  <button
+                    type="button"
+                    onClick={clearImage}
+                    className="text-sm text-slate-600 hover:text-rose-600"
+                  >
+                    Hapus gambar
+                  </button>
+                )}
+              </div>
+            </div>
+            {/* ====== End Dropzone ====== */}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setOpen(false)} className="px-4 py-2">
+                Batal
+              </button>
+              <button onClick={save} className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white">
+                Submit
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
-  );
-}
-
-/** Routes dipakai ulang di mobile & desktop supaya tidak duplikasi logic */
-function ContentRoutes() {
-  return (
-    <Routes>
-      <Route index element={<HomeAdmin />} />
-      <Route path="laporan" element={<LaporanAdmin />} />
-      <Route path="akun" element={<AccountsAdmin />} />
-      <Route path="*" element={<Navigate to="." replace />} />
-    </Routes>
-  );
-}
-
-/** Link item sidebar */
-function Item({ to, children, end = false, onClick }) {
-  return (
-    <NavLink
-      to={to}
-      end={end}
-      onClick={onClick}
-      className={({ isActive }) =>
-        [
-          'block rounded-md px-3 py-2 transition',
-          isActive ? 'bg-white text-slate-800 shadow' : 'hover:bg-white/10',
-        ].join(' ')
-      }
-    >
-      {children}
-    </NavLink>
   );
 }
